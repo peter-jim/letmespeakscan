@@ -322,7 +322,18 @@ def get_mysql_inser_different_boo_int_char_test(banned=True, nftaddress='D16eYPY
     conn.commit()
 
 
-get_account_address_by_token(tokenAddress)
+
+with open("erroruserAccount.txt","w") as erroruserAccount:
+    erroruserAccount.write("这是个测试！")
+    erroruserAccount.write("这是个测试！")
+    print(erroruserAccount,'hello')
+
+with open("errorNFT.txt","w") as errorNFT:
+    errorNFT.write("这是个测试！")
+
+with open("data.txt","w") as data:
+    data.write("这是个测试！")
+#get_account_address_by_token(tokenAddress)
 
 
 
