@@ -7,6 +7,8 @@ import requests
 import json
 import pymysql
 import time
+import asyncio
+import aiohttp
 
 
 # base url
@@ -50,6 +52,12 @@ def mysql_insert_test(useraccount = 'C6qep3y7tCZUJYDXHiwuK46Gt6FsoxLi8qV1bTCRYaY
     conn.commit()
     cursor.close()
     conn.close()
+
+def mysql_get_oneline(num):
+    # sql  = "select * from Owner"
+    # row_count = cursor.execute(sql)
+    result = cursor.fetchall()
+    return result(num)
 
 def get_last_block_test():
     response =  requests.get(url='https://public-api.solscan.io/block/last?limit=10',headers = header)
@@ -176,7 +184,6 @@ def get_NFT_token_list_by_owner(ownerAddress):
         except:
             print('owner 添加失败')
         print('error network,please try again-- ',ownerAddress,' -- had to list, Already have  ')
-
 
 def get_NFT_uri_test(NFTaddress = '9D16eYPYJcJv7z3251b1QLp72cZDonnW1eRA9VDep6Rz'):
 
@@ -331,7 +338,6 @@ def get_mysql_inser_different_boo_int_char_test(banned=True, nftaddress='D16eYPY
     rows = cursor.execute(sql)
     conn.commit()
 
-
 def get_account_address_by_token_restored_msyql(address):
     total_address_account = _get_account_num_by_token(address)
     time.sleep(1)
@@ -354,12 +360,89 @@ def get_account_address_by_token_restored_msyql(address):
     print('from onwer we can get SPL token balance,it include LSTAR and NFT')
     print('finnish')
 
+async def get_NFT_token_address_by_mysql():
+    sql = "select * from Owner"
+    row_count = cursor.execute(sql)
+    result = cursor.fetchall()
+    task_list = []
+    for i in range(0,10):
+        task = asyncio.create_task(get_nft_address(result[i][0]))
+        task_list.append(task)
+    done, pending = await asyncio.wait(task_list, timeout=None)
+        # 得到执行结果
+    for done_task in done:
+         # print(f"{time.time()} 得到执行结果 {done_task.result()}")
+         print('this owner token list follow this:')
+         token_list = json.loads(done_task.result())
+         print(token_list)
+         USDC = 0
+         LSTAR = 0
+         nft = ''
+
+         for i in token_list:
+             if i['tokenName'] == 'USD Coin':
+                 USDC = i['tokenAmount']['uiAmountString']
+                 # print('USD Coin balance is ',USDC)
+             if i['tokenName'] == 'Learning Star':
+                 LSTAR = i['tokenAmount']['uiAmountString']
+
+         for i in token_list:
+            # print(i)
+            if i['tokenAmount']['amount'] == '1' and i['tokenAmount']['decimals'] == 0 and i['tokenAmount']['uiAmountString'] == '1' and i['tokenName'] ==''  and i['tokenIcon'] == '':
+                print('NFT address is',i['tokenAddress'])
+                nft = i['tokenAddress']
+
+            try:
+                sql = "insert into NFTcontract(owneraddress,nftaddress,status) values('%s','%s',%d)" % \
+                      ('11', nft, 0)
+                print(sql)
+                cursor.execute(sql)
+                conn.commit()
+            except:
+                print('插入错误')
 
 
-#
+
+async def get_nft_address(ownerAddress):
+    '''
+    this is async fuction for get nft addres.
+    :param owneraddress:
+    :return:
+    '''
+    url = 'https://' + baseURL + 'account/tokens?account=' + ownerAddress
+    # we will get the 'USD Coin' and 'Learning Star'
+    USDC = 0
+    LSTAR = 0
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url=url, headers=header, timeout=15) as response:
+            #print(await response.text())
+            return await response.text()
+
+async def test():
+    url = "https://www.cnblogs.com/yoyoketang/"
+    task_list = []
+    for i in range(10):
+        task = asyncio.create_task(get_nft_address(url))
+        task_list.append(task)
+    done, pending = await asyncio.wait(task_list, timeout=None)
+    # 得到执行结果
+    for done_task in done:
+        print(f"{time.time()} 得到执行结果 {done_task.result()}")
+
+
+
+#  -- 异步
+start_time = time.time()
+loop = asyncio.get_event_loop()
+loop.run_until_complete(get_NFT_token_address_by_mysql())
+print("总耗时: ", time.time()-start_time)
+
+
+#  --  run
 # get_account_address_by_token(tokenAddress)
-get_account_address_by_token_restored_msyql(tokenAddress)
-
+# get_account_address_by_token_restored_msyql(tokenAddress)
+# mysql_get_oneline()
+# get_NFT_token_address_by_mysql()
 
 #  --   test
 # get_mysql_inser_different_boo_int_char_test()
