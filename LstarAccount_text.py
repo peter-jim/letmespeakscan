@@ -20,18 +20,20 @@ header = {
 'user-agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.84 Mobile Safari/537.36'
 }
 
-conn = pymysql.connect(host='127.0.0.1', user='root', password='1416615127dj', database='letmespeak')
-# cursor=pymysql.cursors.DictCursor,是为了将数据作为一个字典返回
-cursor = conn.cursor()
 
-errorNFTADDRESS = []
-erroruserAccount = []
 
-global errorNFTADDRESSCount
-global erroruserAccountCount
+with open("data.txt","w") as data:
+    data.write('')
 
-errorNFTADDRESSCount=0
-erroruserAccountCount=0
+
+with open("erroruserAccount.txt","w") as erroruserAccount:
+    erroruserAccount.write("这是个测试！")
+    erroruserAccount.write("这是个测试！")
+    print(erroruserAccount,'hello')
+
+with open("errorNFT.txt","w") as errorNFT:
+    errorNFT.write("这是个测试！")
+
 
 def mysql_insert_test(useraccount = 'C6qep3y7tCZUJYDXHiwuK46Gt6FsoxLi8qV1bTCRYaY1',usdc=100,lstar=1312.1,nftaddress='DDDsbU5q717qG4pop8dpNvtso5P1UvhQpiWCtQMBhDzm'):
     conn = pymysql.connect(host='127.0.0.1', user='root', password='1416615127dj', database='letmespeak')
@@ -143,27 +145,26 @@ def get_NFT_token_list_by_owner(ownerAddress):
 
                 except:
                     print('uri or NFT info error')
-                    continue
+                    #continue
             else:
                 continue
             # storage to mysql database
             # print(name, number, talent, activated, rarity, currency_reward,
             #       learning_speed, visa_total, visa_left, xp_level, invites_total, invites_left, banned)
+            print('插入成功1', ownerAddress, USDC, LSTAR, nft, name, number, talent, activated, rarity, currency_reward,
+                  learning_speed, visa_total, visa_left, xp_level, invites_total, invites_left, banned)
 
-            try:
-                sql_insert = "insert into Userdata(useraccount,usdc,lstar,nftaddress,nftname,nftnumber,talent,activated ,rarity ,currency_reward ,learning_speed ,visa_total,visa_left ,xp_level ,invites_total ,invites_left , banned) values('%s',%s,%s,'%s','%s','%s',%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)" % \
-                      (ownerAddress, USDC, LSTAR, nft,name,number,talent,activated ,rarity ,currency_reward ,learning_speed ,visa_total,visa_left ,xp_level ,invites_total ,invites_left , banned)
-                print(sql_insert)
-                cursor.execute(sql_insert)
-                conn.commit()
-                print('插入成功',ownerAddress, USDC, LSTAR, nft,name,number,talent,activated ,rarity ,currency_reward ,learning_speed ,visa_total,visa_left ,xp_level ,invites_total ,invites_left , banned)
-            except:
-                errorNFTADDRESS.append(i['tokenAddress'])
-                print('get item error',i['tokenAddress'])
+            # we use txt to restored
+            data.writelines(ownerAddress + '\t' + USDC + '\t' + LSTAR + '\t' + nft + '\t' + name + '\t' + number + '\t' + talent + '\t' + activated + '\t' + rarity + '\t' + currency_reward + '\t' + learning_speed + '\t' + visa_total + '\t' + visa_left + '\t' + xp_level + '\t' + invites_total + '\t' + invites_left + '\t' + banned + '\n')
+            print('插入成功', ownerAddress, USDC, LSTAR, nft, name, number, talent, activated, rarity, currency_reward,
+                  learning_speed, visa_total, visa_left, xp_level, invites_total, invites_left, banned)
 
+            errorNFT.write(nft + '\n')
 
+            print('get item error', i['tokenAddress'])
     except:
-        erroruserAccount.append(ownerAddress)
+        print('有错误')
+        erroruserAccount.write(ownerAddress)
         print('error network,please try again-- ',ownerAddress,' -- had to list, Already have  ')
 
 
@@ -204,7 +205,7 @@ def get_NFT_uri(NFTaddress):
         # print(NFT_info['data']['metadata']['data'])
         # print(NFT_info['data']['metadata']['data']['uri'])
     except:
-        errorNFTADDRESS.append(NFTaddress)
+
         print('GET Uri error')
         return
     return NFT_info['data']['metadata']['data']['uri']
@@ -277,7 +278,6 @@ def get_NFT_totalInfo_by_Uri(uri):
 
         return [name,number,talent,activated ,rarity ,currency_reward ,learning_speed ,visa_total,visa_left ,xp_level ,invites_total ,invites_left , banned]
     except:
-        errorNFTADDRESS.append(uri)
         print('get nft info error')
         return 'error'
 
@@ -323,17 +323,8 @@ def get_mysql_inser_different_boo_int_char_test(banned=True, nftaddress='D16eYPY
 
 
 
-with open("erroruserAccount.txt","w") as erroruserAccount:
-    erroruserAccount.write("这是个测试！")
-    erroruserAccount.write("这是个测试！")
-    print(erroruserAccount,'hello')
 
-with open("errorNFT.txt","w") as errorNFT:
-    errorNFT.write("这是个测试！")
-
-with open("data.txt","w") as data:
-    data.write("这是个测试！")
-#get_account_address_by_token(tokenAddress)
+get_account_address_by_token(tokenAddress)
 
 
 

@@ -55,7 +55,6 @@ def get_last_block_test():
     response =  requests.get(url='https://public-api.solscan.io/block/last?limit=10',headers = header)
     print(response.content)
 
-
 def _get_account_num_by_token(address):
     '''
 
@@ -137,6 +136,7 @@ def get_NFT_token_list_by_owner(ownerAddress):
                 #print('NFT address is',nft)
 
                 try:
+                    print('try to get uri and NFT info ')
                     url  = get_NFT_uri(nft)
                     (name, number, talent, activated, rarity, currency_reward,
                      learning_speed, visa_total, visa_left, xp_level, invites_total, invites_left, banned) = get_NFT_totalInfo_by_Uri(url)
@@ -151,21 +151,31 @@ def get_NFT_token_list_by_owner(ownerAddress):
             #       learning_speed, visa_total, visa_left, xp_level, invites_total, invites_left, banned)
 
             try:
-                sql_insert = "insert into Userdata(useraccount,usdc,lstar,nftaddress,nftname,nftnumber,talent,activated ,rarity ,currency_reward ,learning_speed ,visa_total,visa_left ,xp_level ,invites_total ,invites_left , banned) values('%s',%s,%s,'%s','%s','%s',%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)" % \
+                sql_insert = "insert into Userdata(useraccount,usdc,lstar,nftaddress,nftname,nftnumber,talent,activated ,rarity ,currency_reward ,learning_speed ,visa_total,visa_left ,xp_level ,invites_total ,invites_left , banned) values('%s',%s,%s,'%s','%s',%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)" % \
                       (ownerAddress, USDC, LSTAR, nft,name,number,talent,activated ,rarity ,currency_reward ,learning_speed ,visa_total,visa_left ,xp_level ,invites_total ,invites_left , banned)
                 print(sql_insert)
                 cursor.execute(sql_insert)
                 conn.commit()
                 print('插入成功',ownerAddress, USDC, LSTAR, nft,name,number,talent,activated ,rarity ,currency_reward ,learning_speed ,visa_total,visa_left ,xp_level ,invites_total ,invites_left , banned)
             except:
+                sql_nft = "insert into ErrorNFT(nftaddress) values(%s)" % \
+                            (nft)
+                cursor.execute(sql_nft)
+                conn.commit()
                 errorNFTADDRESS.append(i['tokenAddress'])
                 print('get item error',i['tokenAddress'])
 
 
     except:
-        erroruserAccount.append(ownerAddress)
-        print('error network,please try again-- ',ownerAddress,' -- had to list, Already have  ')
 
+        try:
+            sql_owner = "insert into ErrorOwner(nftaddress) values(%s)" % \
+                  ( ownerAddress )
+            cursor.execute(sql_owner)
+            conn.commit()
+        except:
+            print('owner 添加失败')
+        print('error network,please try again-- ',ownerAddress,' -- had to list, Already have  ')
 
 
 def get_NFT_uri_test(NFTaddress = '9D16eYPYJcJv7z3251b1QLp72cZDonnW1eRA9VDep6Rz'):
@@ -309,21 +319,46 @@ def get_NFT_totalInfo_by_Uri_test(uri = 'https://api2.letmespeak.pro/api/1.0/met
     except:
         print('error network,please try again')
 
-def get_mysql_inser_different_boo_int_char_test(banned=True, nftaddress='D16eYPYJcJv7z3251b1QLp72cZDonnW1eRA9VDep6Rz', lstar=111):
+def get_mysql_inser_different_boo_int_char_test(banned=True, nftaddress='D16eYPYJcJv72z3251b1QLp72cZDonnW1eRA9VDep6Rz', lstar=111):
     conn = pymysql.connect(host='127.0.0.1', user='root', password='1416615127dj', database='letmespeak')
     # cursor=pymysql.cursors.DictCursor,是为了将数据作为一个字典返回
     cursor = conn.cursor()
 
     #make sure your sql values is right ,in python connect to mysql, we must make sure type is same.
-    sql = "insert into Test(lstar,nftaddress,banned) values(%d,'%s',%s)" % \
+    sql = "insert into Test(lstar,nftaddress,banned) values(%s,'%s',%s)" % \
           (lstar,nftaddress,banned)
     print(sql)
     rows = cursor.execute(sql)
     conn.commit()
 
 
-get_account_address_by_token(tokenAddress)
+def get_account_address_by_token_restored_msyql(address):
+    total_address_account = _get_account_num_by_token(address)
+    time.sleep(1)
+    print('please waite , it need time to waite get reponse data')
+    url = 'https://' + baseURL + 'token/holders?tokenAddress=' + address + '&limit='+str(total_address_account)
 
+    response = requests.get(url=url, headers=header)
+    all_account_address = json.loads(response.content.decode())['data']
+    # print(all_account_address)
+    for i in all_account_address:
+        # get_NFT_token_list_by_owner(i['owner'])
+        print(i['owner'])
+        sql = "insert into Owner(owneraddress,status) values('%s',%d)" % \
+              (i['owner'], 0)
+        print(sql)
+        cursor.execute(sql)
+        conn.commit()
+        print('成功插入', i['owner'])
+
+    print('from onwer we can get SPL token balance,it include LSTAR and NFT')
+    print('finnish')
+
+
+
+#
+# get_account_address_by_token(tokenAddress)
+get_account_address_by_token_restored_msyql(tokenAddress)
 
 
 #  --   test
