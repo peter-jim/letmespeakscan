@@ -425,6 +425,125 @@ async def get_nft_address(ownerAddress):
         except:
             return ('owneraddress error')
 
+async def get_nft_info_by_mysql():
+    sql = "select * from NFTUri"
+    cursor.execute(sql)
+    result = cursor.fetchall()
+
+
+    for k in range(len(result)-1,0,-10):
+        print(' 第 k 轮 --  ',k)
+
+        task_list = []
+
+        for i in range(0,10):
+            task = asyncio.create_task(get_nft_info_asyn(result[k-i][1],result[k-i][0]))
+            task_list.append(task)
+        done, pending = await asyncio.wait(task_list, timeout=None)
+            # 得到执行结果
+        print(done)
+        if done == 'nftaddress error':
+            continue
+
+        for done_task in done:
+             # print(f"{time.time()} 得到执行结果 {done_task.result()}")
+             try:
+                NFT_info = json.loads(done_task.result()[0])
+                nftaddress=done_task.result()[1]
+
+                # print('nft info is ', NFT_info)
+                print('nfraddress',nftaddress)
+
+                name = ''
+                number = 0
+                talent = 0
+                activated = None
+                rarity = 0
+                currency_reward = 0
+                learning_speed = 0
+                visa_total = 0
+                visa_left = 0
+                xp_level = 0
+                invites_total = 0
+                invites_left = 0
+                banned = None
+
+                try:
+
+
+                    # print(NFT_info['attributes'])
+                    for i in NFT_info['attributes']:
+                        # print(i)
+                        if i['trait_type'] == 'name':
+                            name = i['value']
+                            # print(i['value'])
+                        elif i['trait_type'] == 'number':
+                            number = i['value']
+                            # print(i['value'])
+                        elif i['trait_type'] == 'talent':
+                            talent = i['value']
+                            # print(i['value'])
+                        elif i['trait_type'] == 'activated':
+                            activated = i['value']
+                            # print(i['value'])
+                        elif i['trait_type'] == 'rarity':
+                            rarity = i['value']
+                            # print(i['value'])
+                        elif i['trait_type'] == 'currency_reward':
+                            currency_reward = i['value']
+                            # print(i['value'])
+                        elif i['trait_type'] == 'learning_speed':
+                            learning_speed = i['value']
+                            # print(i['value'])
+                        elif i['trait_type'] == 'visa_total':
+                            visa_total = i['value']
+                            # print(i['value'])
+                        elif i['trait_type'] == 'visa_left':
+                            visa_left = i['value']
+                            # print(i['value'])
+                        elif i['trait_type'] == 'xp_level':
+                            xp_level = i['value']
+                            # print(i['value'])
+                        elif i['trait_type'] == 'invites_total':
+                            invites_total = i['value']
+                            # print(i['value'])
+                        elif i['trait_type'] == 'invites_left':
+                            invites_left = i['value']
+                            # print(i['value'])
+                        elif i['trait_type'] == 'banned':
+                            banned = i['value']
+                            # print(i['value'])
+
+                    print(name,number, talent, activated, rarity, currency_reward, learning_speed, visa_total,
+                            visa_left, xp_level, invites_total, invites_left, banned),
+                except:
+
+                    print('get nft info error')
+
+
+                # try:
+                #     sql = "insert into NFTinfo(nftaddress,uri,status) values('%s','%s',%d)" % \
+                #           (nftaddress,uri,0)
+                #     cursor.execute(sql)
+                #     conn.commit()
+                # except:
+                #     print('插入错误')
+
+             except:
+                 continue
+
+        time.sleep(10)
+    print()
+
+async def get_nft_info_asyn(url,NFTaddress):
+
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.get(url=url, headers=header, timeout=15) as response:
+                # print(await response.text()),
+                return await response.text(), NFTaddress
+        except:
+            return ('nft info error')
 
 
 async def get_nft_uri_by_mysql():
@@ -468,6 +587,7 @@ async def get_nft_uri_by_mysql():
 
         time.sleep(10)
 
+
 async def get_nft_uri_async(NFTaddress):
     url = 'https://api.solscan.io/account?address=' + NFTaddress
     async with aiohttp.ClientSession() as session:
@@ -493,6 +613,8 @@ async def test():
 
 
 
+
+
 #  -- 异步  -- 获取  nft address
 # start_time = time.time()
 # loop = asyncio.get_event_loop()
@@ -500,9 +622,16 @@ async def test():
 # print("总耗时: ", time.time()-start_time)
 
 #  -- 异步  -- 获取  nft url
+# start_time = time.time()
+# loop = asyncio.get_event_loop()
+# loop.run_until_complete(get_nft_uri_by_mysql())
+# print("总耗时: ", time.time()-start_time)
+
+
+#  -- 异步  -- 获取  nft info
 start_time = time.time()
 loop = asyncio.get_event_loop()
-loop.run_until_complete(get_nft_uri_by_mysql())
+loop.run_until_complete(get_nft_info_by_mysql())
 print("总耗时: ", time.time()-start_time)
 
 #  --  run
