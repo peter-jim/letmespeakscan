@@ -364,42 +364,50 @@ async def get_NFT_token_address_by_mysql():
     sql = "select * from Owner"
     row_count = cursor.execute(sql)
     result = cursor.fetchall()
-    task_list = []
-    for i in range(0,10):
-        task = asyncio.create_task(get_nft_address(result[i][0]))
-        task_list.append(task)
-    done, pending = await asyncio.wait(task_list, timeout=None)
-        # 得到执行结果
-    for done_task in done:
-         # print(f"{time.time()} 得到执行结果 {done_task.result()}")
-         print('this owner token list follow this:')
-         token_list = json.loads(done_task.result())
-         print(token_list)
-         USDC = 0
-         LSTAR = 0
-         nft = ''
 
-         for i in token_list:
-             if i['tokenName'] == 'USD Coin':
-                 USDC = i['tokenAmount']['uiAmountString']
-                 # print('USD Coin balance is ',USDC)
-             if i['tokenName'] == 'Learning Star':
-                 LSTAR = i['tokenAmount']['uiAmountString']
+    for k in range(len(result)-1,0,-10):
+        print(' 第 k 轮 --  ',k)
 
-         for i in token_list:
-            # print(i)
-            if i['tokenAmount']['amount'] == '1' and i['tokenAmount']['decimals'] == 0 and i['tokenAmount']['uiAmountString'] == '1' and i['tokenName'] ==''  and i['tokenIcon'] == '':
-                print('NFT address is',i['tokenAddress'])
-                nft = i['tokenAddress']
+        task_list = []
 
-            try:
-                sql = "insert into NFTcontract(owneraddress,nftaddress,status) values('%s','%s',%d)" % \
-                      ('11', nft, 0)
-                print(sql)
-                cursor.execute(sql)
-                conn.commit()
-            except:
-                print('插入错误')
+        for i in range(0,10):
+            task = asyncio.create_task(get_nft_address(result[k-i][0]))
+            task_list.append(task)
+        done, pending = await asyncio.wait(task_list, timeout=None)
+            # 得到执行结果
+        if done == 'owneraddress error':
+            continue
+
+        for done_task in done:
+             # print(f"{time.time()} 得到执行结果 {done_task.result()}")
+             try:
+                token_list = json.loads(done_task.result()[0])
+                owneraddress=done_task.result()[1]
+             except:
+                 continue
+             USDC = 0
+             LSTAR = 0
+             for i in token_list:
+                 if i['tokenName'] == 'USD Coin':
+                     USDC = i['tokenAmount']['uiAmountString']
+                     # print('USD Coin balance is ',USDC)
+                 if i['tokenName'] == 'Learning Star':
+                     LSTAR = i['tokenAmount']['uiAmountString']
+
+             for i in token_list:
+                # print(i)
+                nft = ''
+                if i['tokenAmount']['amount'] == '1' and i['tokenAmount']['decimals'] == 0 and i['tokenAmount']['uiAmountString'] == '1' and i['tokenName'] ==''  and i['tokenIcon'] == '':
+                    print('NFT address is',i['tokenAddress'])
+                    nft = i['tokenAddress']
+                    try:
+                        sql = "insert into NFTcontract(owneraddress,nftaddress,status,lstar,usdc) values('%s','%s',%d,%s,%s)" % \
+                              (owneraddress, nft, 0,LSTAR,USDC)
+                        cursor.execute(sql)
+                        conn.commit()
+                    except:
+                        print('插入错误')
+        time.sleep(10)
 
 
 
@@ -411,12 +419,13 @@ async def get_nft_address(ownerAddress):
     '''
     url = 'https://' + baseURL + 'account/tokens?account=' + ownerAddress
     # we will get the 'USD Coin' and 'Learning Star'
-    USDC = 0
-    LSTAR = 0
     async with aiohttp.ClientSession() as session:
-        async with session.get(url=url, headers=header, timeout=15) as response:
-            #print(await response.text())
-            return await response.text()
+        try:
+            async with session.get(url=url, headers=header, timeout=15) as response:
+                #print(await response.text()),
+                return await response.text(),ownerAddress
+        except:
+            return ('owneraddress error')
 
 async def test():
     url = "https://www.cnblogs.com/yoyoketang/"
