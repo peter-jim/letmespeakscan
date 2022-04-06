@@ -409,8 +409,6 @@ async def get_NFT_token_address_by_mysql():
                         print('插入错误')
         time.sleep(10)
 
-
-
 async def get_nft_address(ownerAddress):
     '''
     this is async fuction for get nft addres.
@@ -427,6 +425,61 @@ async def get_nft_address(ownerAddress):
         except:
             return ('owneraddress error')
 
+
+
+async def get_nft_uri_by_mysql():
+    sql = "select * from NFTcontract"
+    row_count = cursor.execute(sql)
+    result = cursor.fetchall()
+
+    for k in range(len(result)-1,0,-10):
+        print(' 第 k 轮 --  ',k)
+
+        task_list = []
+
+        for i in range(0,10):
+            task = asyncio.create_task(get_nft_uri_async(result[k-i][1]))
+            task_list.append(task)
+        done, pending = await asyncio.wait(task_list, timeout=None)
+            # 得到执行结果
+        print(done)
+        if done == 'owneraddress error':
+            continue
+
+        for done_task in done:
+             # print(f"{time.time()} 得到执行结果 {done_task.result()}")
+             try:
+                token_list = json.loads(done_task.result()[0])
+                nftaddress=done_task.result()[1]
+                uri = token_list['data']['metadata']['data']['uri']
+                print('uri is',uri)
+                print('nfraddress',nftaddress)
+
+                try:
+                    sql = "insert into NFTUri(nftaddress,uri,status) values('%s','%s',%d)" % \
+                          (nftaddress,uri,0)
+                    cursor.execute(sql)
+                    conn.commit()
+                except:
+                    print('插入错误')
+
+             except:
+                 continue
+
+        time.sleep(10)
+
+async def get_nft_uri_async(NFTaddress):
+    url = 'https://api.solscan.io/account?address=' + NFTaddress
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.get(url=url, headers=header, timeout=15) as response:
+                # print(await response.text()),
+                return await response.text(), NFTaddress
+        except:
+            return ('owneraddress error')
+
+
+
 async def test():
     url = "https://www.cnblogs.com/yoyoketang/"
     task_list = []
@@ -440,12 +493,17 @@ async def test():
 
 
 
-#  -- 异步
+#  -- 异步  -- 获取  nft address
+# start_time = time.time()
+# loop = asyncio.get_event_loop()
+# loop.run_until_complete(get_NFT_token_address_by_mysql())
+# print("总耗时: ", time.time()-start_time)
+
+#  -- 异步  -- 获取  nft url
 start_time = time.time()
 loop = asyncio.get_event_loop()
-loop.run_until_complete(get_NFT_token_address_by_mysql())
+loop.run_until_complete(get_nft_uri_by_mysql())
 print("总耗时: ", time.time()-start_time)
-
 
 #  --  run
 # get_account_address_by_token(tokenAddress)
