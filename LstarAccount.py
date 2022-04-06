@@ -515,7 +515,21 @@ async def get_nft_info_by_mysql():
                             # print(i['value'])
 
                     print(name,number, talent, activated, rarity, currency_reward, learning_speed, visa_total,
-                            visa_left, xp_level, invites_total, invites_left, banned),
+                            visa_left, xp_level, invites_total, invites_left, banned)
+                    try:
+                        sql_insert = "insert into NFTinfo(nftaddress,nftname,nftnumber,talent,activated ,rarity ,currency_reward  ,visa_total,visa_left ,xp_level ,invites_total ,invites_left , banned,status) values('%s','%s',%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)" % \
+                                     (nftaddress,name, number, talent, activated, rarity,
+                                      currency_reward, visa_total, visa_left, xp_level, invites_total,
+                                      invites_left, banned,0)
+                        print(sql_insert)
+                        cursor.execute(sql_insert)
+                        conn.commit()
+                        print('插入成功', nftaddress, name, number, talent, activated, rarity,
+                          currency_reward, learning_speed, visa_total, visa_left, xp_level, invites_total, invites_left,
+                          banned)
+                    except:
+                        print('插入错误')
+
                 except:
 
                     print('get nft info error')
